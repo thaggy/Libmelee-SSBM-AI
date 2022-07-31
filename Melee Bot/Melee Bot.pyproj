@@ -22,6 +22,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Melee_Bot.py" />
+    <Compile Include="manager.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="tactic.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="tech.py">
       <SubType>Code</SubType>
     </Compile>
