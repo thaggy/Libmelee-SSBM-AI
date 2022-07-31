@@ -3,6 +3,10 @@ import tech as te
 import tactic as ta
 
 class Manager:
+    """
+    Manager for Classes. Stores useful data that we will be using often so that it is all in one place.
+    Cuts down on typing as well
+    """
     framedata = melee.FrameData(write=False)
     tech = None
     tactic = None

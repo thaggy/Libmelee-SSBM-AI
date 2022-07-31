@@ -3,8 +3,7 @@ from melee.enums import Action, Button, Character
 
 class Tech:
     """
-    Tech class, an instance of this makes it easier to call all of the functions essentially. I honestly just made this into a class 
-    just so I had to type less.
+    Presses buttons and checks action frames in order to execute techniques
     """
     def __init__(self, ai_state, human_state, controller):
         self.ai_state = ai_state
@@ -17,9 +16,6 @@ class Tech:
         subtracting 2, for some reason I found that this always worked better) 
 
         This is easily modifyable if someone finds that this number does not work for them as it did for me
-
-        Arguments:
-        ai_state (gamestate.controller[ai_port])
         """
         if self.ai_state.character == Character.FOX or self.ai_state.character == Character.POPO or self.ai_state.character == Character.KIRBY  or \
         self.ai_state.character == Character.SAMUS or self.ai_state.character == Character.SHEIK or self.ai_state.character == Character.PICHU or \
