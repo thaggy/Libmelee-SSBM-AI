@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>7d088f4a-4289-49bb-b3bf-b595ea7a23ae</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Melee_Bot.py</StartupFile>
+    <StartupFile>tech.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
