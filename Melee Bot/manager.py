@@ -23,5 +23,5 @@ class Manager:
         self.human_controller.connect()
 
     def initAI(self, ai_state, human_state, controller, stage):
-        self.tech = te.Tech(ai_state, human_state, controller)
+        self.tech = te.Tech(ai_state, human_state, controller, stage)
         self.tactic = ta.Tactic(self.framedata, human_state, ai_state, stage)

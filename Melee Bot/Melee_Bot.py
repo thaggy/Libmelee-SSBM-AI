@@ -19,9 +19,14 @@ while True:
     #Here are we in game
     if gamestate.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
         meleeManager.initAI(gamestate.players[ai_port], gamestate.players[human_port], meleeManager.ai_controller, gamestate.stage)
-        if not meleeManager.tactic.isInHitStun():
-            meleeManager.tech.recover(gamestate.stage)
-        print(str(gamestate.players[human_port].position.x)+ " - "+ str(gamestate.players[human_port].position.y) + " - " + str(gamestate.players[human_port].action))
+        if meleeManager.tactic.isDead():
+            meleeManager.tech.hardReset()
+        if meleeManager.tactic.canGrab():
+            meleeManager.tech.grab()
+        if meleeManager.tactic.shouldRecover():
+            meleeManager.tech.recover()
+        print("HUMAN -> x - " + str(gamestate.players[human_port].position.x)+ ": y - "+ str(gamestate.players[human_port].position.y) + ": state - " + str(gamestate.players[human_port].action))
+        print("AI -> x - " + str(gamestate.players[ai_port].position.x)+ ": y - "+ str(gamestate.players[ai_port].position.y) + ": state - " + str(gamestate.players[ai_port].action))
     else:
        #Here we are in the main menu or menu select
        melee.MenuHelper.menu_helper_simple(gamestate,meleeManager.ai_controller,melee.enums.Character.FOX,melee.enums.Stage.FINAL_DESTINATION,"",0,0,False,False)

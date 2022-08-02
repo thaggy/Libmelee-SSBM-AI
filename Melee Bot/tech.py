@@ -7,17 +7,15 @@ class Tech:
     """
     neutral = [Action.STANDING, Action.DASHING, Action.TURNING, \
             Action.RUNNING, Action.EDGE_TEETERING_START, Action.EDGE_TEETERING]
-    jumping = [Action.JUMPING_ARIAL_FORWARD, Action.JUMPING_ARIAL_BACKWARD]
-    isjumpCancel = (self.ai.action == Action.KNEE_BEND) and (self.ai.action_frame >= self.jump_cancel_frames())
-    IsShineStart = self.ai.action in [melee.enums.Action.DOWN_B_STUN, melee.enums.Action.DOWN_B_GROUND, melee.enums.Action.DOWN_B_GROUND_START]
-    humanedge = human_edge.action in [Action.EDGE_HANGING, Action.EDGE_CATCHING, Action.EDGE_GETUP_SLOW, \
+    edge = [Action.EDGE_HANGING, Action.EDGE_CATCHING, Action.EDGE_GETUP_SLOW, \
         Action.EDGE_GETUP_QUICK, Action.EDGE_ATTACK_SLOW, Action.EDGE_ATTACK_QUICK, Action.EDGE_ROLL_SLOW, Action.EDGE_ROLL_QUICK]
     onEdge = [Action.EDGE_HANGING, Action.EDGE_CATCHING]
 
-    def __init__(self, ai_state, human_state, controller):
+    def __init__(self, ai_state, human_state, controller, stage):
         self.ai = ai_state
         self.human = human_state
         self.controller = controller
+        self.stage = stage
 
     def jump_cancel_frames(self):
         """
@@ -189,35 +187,123 @@ class Tech:
 
         self.controller.empty_input()
 
-    def recover(self, stage):
+
+    def hardReset(self):
+        """
+        this method is used to reset the state of the Bot, basically it releases all buttons
+        """
+        self.controller.release_all()
+
+    def recover(self):
         """
         used to get back onto the stage
 
-        This is currently designed for specifically fox
+        This is currently designed for specifically fox (and not very well tbh)
         """
+        jumping = [Action.JUMPING_ARIAL_FORWARD, Action.JUMPING_ARIAL_BACKWARD]
         #if we are on stage why would we recover
         if not self.ai.off_stage:
-            self.controller.release_all()
+            self.controller.empty_input()
+            return
+        onLeft = self.ai.position.x > 0
+        x = 1
+        if onLeft:
+            x = 0
+        # we are free falling, we are just gonna move towards the stage
+        if self.ai.action == Action.DEAD_FALL or self.ai.action == Action.SWORD_DANCE_1_AIR:
+            self.controller.release_button(Button.BUTTON_B)
+            self.controller.tilt_analog(Button.BUTTON_MAIN, x, .5)
             return
         #If we are on the ledge we are just gonna roll back on
         if self.ai.action in self.onEdge:
-            if self.ai.prev.button[Button.BUTTON_L]:
+            if self.controller.prev.button[Button.BUTTON_L]:
                 self.controller.empty_input()
                 return
             self.controller.press_button(Button.BUTTON_L)
             return
+        #If we cant jump, make sure that we dont try and mess something up
+        if self.ai.jumps_left == 0 or self.ai.action in jumping:
+            self.controller.release_button(Button.BUTTON_Y)
+        #if we are in the middle of jumping, dont
+        if self.ai.action in jumping and self.ai.action_frame < 10:
+            self.controller.empty_input()
+            return
         # are we off stage to the left or to the right? (the middle of every stage is zero and goes from - to + left to right respectively)
-        onLeft = self.ai.position.x < 0
-        distance_from_ledge = - abs(self.ai.position.x) - abs(melee.stages.EDGE_GROUND_POSITION[stage])
-        print(str(distance_from_ledge < 85))
-        print(str(self.ai.position.y > -16.5))
+        distance_from_ledge = - abs(self.ai.position.x) - abs(melee.stages.EDGE_GROUND_POSITION[self.stage])
         canIllusion = (distance_from_ledge < 85) and (self.ai.position.y > -16.5)
-        x = 0
-        if onLeft:
-            x = 1
-        if(canIllusion):
-            print("CAN ILLUSION" + str(self.ai.hitstun_frames_left))
+        canJump = (distance_from_ledge < 30) and (self.ai.position.y > -30)
+        needsToJump = (distance_from_ledge > 80) or (self.ai.position.y < -100)
+
+        if canJump and self.ai.jumps_left > 0:
+            if self.controller.prev.button[Button.BUTTON_Y]:
+                self.controller.empty_input()
+                return
+            self.controller.press_button(Button.BUTTON_Y)
+            self.controller.tilt_analog(Button.BUTTON_MAIN, x, .5)
+            return
+        if needsToJump and self.ai.jumps_left > 0:
+            if self.controller.prev.button[Button.BUTTON_Y]:
+                self.controller.empty_input()
+                return
+            self.controller.press_button(Button.BUTTON_Y)
+            self.controller.tilt_analog(Button.BUTTON_MAIN, x, .5)
+            return
+        if canIllusion:
             self.controller.tilt_analog(Button.BUTTON_MAIN,x,0.5)
             self.controller.press_button(Button.BUTTON_B)
             return
+        
+        #We are about to take off
+        if self.ai.action == Action.SWORD_DANCE_3_LOW:
+            #We are above the stage
+            if self.ai.position.y > 0:
+                self.controller.tilt_analog(Button.BUTTON_MAIN, x, .5)
+                return
+            #We are under the stage
+            if abs(self.ai.position.x) < melee.stages.EDGE_GROUND_POSITION[self.stage] + 30:
+                self.controller.tilt_analog(Button.BUTTON_MAIN, .5, 1)
+                return
+            if self.ai.position.y < 0:
+                self.controller.tilt_analog(Button.BUTTON_MAIN, x, 1)
+                return
+
+        #If we are within firefox range, firefox
+        canFireFox = distance_from_ledge < 160
+        if canFireFox:
+            self.controller.press_button(Button.BUTTON_B)
+            self.controller.tilt_analog(Button.BUTTON_MAIN, 0.5, 1)
+            return
+
+        self.controller.empty_input()
+
+    def grab(self):
+        if self.controller.prev.button[Button.BUTTON_Z]:
+            self.controller.empty_input()
+            return
+        if self.ai.action == Action.GRAB:
+            self.controller.empty_input()
+            return
+        if self.ai.action == Action.LANDING_SPECIAL:
+            self.controller.empty_input()
+            return
+        if self.ai.action in [Action.DOWN_B_GROUND_START, Action.DOWN_B_GROUND] and self.ai.action_frame >=1:
+            self.controller.press_button(Button.BUTTON_Y)
+            self.controller.press_button(Button.BUTTON_Z)
+            return
+        if self.ai.action == Action.KNEE_BEND:
+            if self.controller.prev.button[Button.BUTTON_Z]:
+                self.controller.release_button(Button.BUTTON_Z)
+                return
+            self.controller.press_button(Button.BUTTON_Z)
+            return
+        #We successfully grabbed
+        if self.ai.action in [Action.GRAB_WAIT, Action.GRAB_PULLING]:
+            self.controller.release_button(Button.BUTTON_Z)
+            self.controller.tilt_analog(Button.BUTTON_MAIN, .5, 0)
+            return
+        if self.controller.prev.button[Button.BUTTON_Z]:
+            self.controller.release_button(Button.BUTTON_Z)
+            return
+        if not self.ai.action in [Action.LYING_GROUND_UP, Action.TECH_MISS_UP, Action.TECH_MISS_DOWN]:
+            self.controller.press_button(Button.BUTTON_Z)
         
