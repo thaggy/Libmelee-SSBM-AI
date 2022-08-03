@@ -25,3 +25,12 @@ This basically presses the buttons. Any tech that needs to be performed such as 
 
 ## Project Goal
 The goal of this project is NOT actually to create the ultimate AI to take over the melee scene. That would, if anything, be a side effect of this project. The main goal of this project is to create tools for other developers to use in their respective smashbots. I am creating basic tools, such as a method that can make any character wavedash, for other developers to use and even modify when they create their renditions of the smashbot. My Smash Bot is just an example of what can be done, not nessecarily the best final product.
+
+## Known Issues
+Currently Does not want to FireFox if off stage for some reason
+
+It is actually to break out of a techchase but not teching, need to update that logic
+
+The bot does not handle being hit very well at all (or really at all)
+
+The bots recovery is wonky and basically always jumps and the illusions
