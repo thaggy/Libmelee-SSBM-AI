@@ -90,7 +90,7 @@ class Tactic:
         distance_away_x = abs(self.ai.position.x - self.human.position.x)
         distance_away_y = abs(self.ai.position.y - self.human.position.y)
         onLeft = self.ai.position.x < self.human.position.x
-        grab_distance = 17
+        grab_distance = 15
         if abs(self.ai.speed_ground_x_self) > 2:
             grab_distance = 30
         facingRightDirection = onLeft == self.ai.facing
