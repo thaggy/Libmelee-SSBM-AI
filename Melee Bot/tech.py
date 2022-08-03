@@ -11,11 +11,12 @@ class Tech:
         Action.EDGE_GETUP_QUICK, Action.EDGE_ATTACK_SLOW, Action.EDGE_ATTACK_QUICK, Action.EDGE_ROLL_SLOW, Action.EDGE_ROLL_QUICK]
     onEdge = [Action.EDGE_HANGING, Action.EDGE_CATCHING]
 
-    def __init__(self, ai_state, human_state, controller, stage):
+    def __init__(self, ai_state, human_state, controller, stage, framedata):
         self.ai = ai_state
         self.human = human_state
         self.controller = controller
         self.stage = stage
+        self.framedata = framedata
 
     def jump_cancel_frames(self):
         """
@@ -277,36 +278,50 @@ class Tech:
         self.controller.empty_input()
 
 
-    def releaseLandZ(self):
+    def resetBasicShieldStates(self):
         """
-        releases L and Z buttons
+        releases L and Z buttons, also resets stick to center
         """
         self.controller.release_button(Button.BUTTON_Z)
         self.controller.release_button(Button.BUTTON_L)
+        self.controller.tilt_analog(Button.BUTTON_MAIN, .5, .5)
         return
     def grab(self):
         """
         performs grab
         """
         #If one of the following happen, we shouldnt be trying to grab
+        dontGrab = [Action.BACKWARD_TECH, Action.NEUTRAL_TECH, Action.FORWARD_TECH, Action.LYING_GROUND_UP, \
+                                     Action.LYING_GROUND_DOWN, Action.TECH_MISS_UP, Action.TECH_MISS_DOWN, Action.GROUND_ROLL_FORWARD_UP, Action.GROUND_ROLL_BACKWARD_UP, \
+                                     Action.GROUND_ROLL_BACKWARD_DOWN, Action.GROUND_ROLL_FORWARD_DOWN, Action.GROUND_ROLL_SPOT_DOWN]
+        grabbableTech = [Action.GROUND_ROLL_FORWARD_UP, Action.GROUND_ROLL_BACKWARD_UP, \
+                                     Action.GROUND_ROLL_BACKWARD_DOWN, Action.GROUND_ROLL_FORWARD_DOWN, Action.GROUND_ROLL_SPOT_DOWN, \
+                                     Action.NEUTRAL_TECH, Action.BACKWARD_TECH, Action.FORWARD_TECH, Action.GROUND_GETUP]
         if self.controller.prev.button[Button.BUTTON_Z]:
             self.controller.empty_input()
             return
-        if self.ai.action == Action.GRAB:
+        if self.ai.action in [Action.GRAB, Action.GRAB_RUNNING]:
+            self.controller.tilt_analog(Button.BUTTON_MAIN, .5, .5)
+            return
+        if self.human.action in [Action.LYING_GROUND_UP, Action.LYING_GROUND_DOWN, Action.TECH_MISS_UP, Action.THROWN_DOWN, Action.TECH_MISS_DOWN]:
             self.controller.empty_input()
             return
-        if self.human.action in [Action.LYING_GROUND_UP, Action.LYING_GROUND_DOWN, Action.TECH_MISS_UP, Action.TECH_MISS_DOWN]:
+        if self.ai.action == [Action.THROW_DOWN]:
+            self.controller.tilt_analog(Button.BUTTON_MAIN, .5, .5)
+            return
+
+        if self.ai.action in [Action.LANDING_SPECIAL]:
             self.controller.empty_input()
             return
-        if self.ai.action == Action.LANDING_SPECIAL:
-            self.controller.empty_input()
-            return
-        if (self.human.action in [Action.NEUTRAL_TECH, Action.BACKWARD_TECH, Action.FORWARD_TECH, Action.GROUND_GETUP]) and (self.human.action_frame >= 36):
+
+        if (self.human.action in grabbableTech) and (self.human.action_frame >= 16):
             if self.controller.prev.button[Button.BUTTON_Z]:
                 self.controller.empty_input()
                 return
+            print("here")
             self.controller.press_button(Button.BUTTON_Z)
             return
+
         #If we are shining, we should jump cancel grab
         if self.ai.action in [Action.DOWN_B_GROUND_START, Action.DOWN_B_GROUND] and self.ai.action_frame >=1:
             self.controller.press_button(Button.BUTTON_Y)
@@ -319,15 +334,87 @@ class Tech:
             self.controller.press_button(Button.BUTTON_Z)
             return
         #We successfully grabbed
-        if self.ai.action in [Action.GRAB_WAIT, Action.GRAB_PULLING]:
+        if self.ai.action in [Action.GRAB_WAIT, Action.GRABBED_WAIT_HIGH, Action.GRAB_PULLING, Action.GRAB_RUNNING_PULLING, Action.GRAB_PUMMEL, Action.GRAB_PULLING_HIGH]:
             self.controller.release_button(Button.BUTTON_Z)
             self.controller.tilt_analog(Button.BUTTON_MAIN, .5, 0)
             return
         if self.controller.prev.button[Button.BUTTON_Z]:
             self.controller.release_button(Button.BUTTON_Z)
         #Perform the grab
-        if not (self.ai.action in [Action.LYING_GROUND_UP, Action.LYING_GROUND_DOWN, Action.TECH_MISS_UP, Action.TECH_MISS_DOWN]):
+        if not (self.human.action in dontGrab):
             self.controller.press_button(Button.BUTTON_Z)
 
     def techChase(self):
+        
+        x = 0
+        onLeft = self.ai.position.x < self.human.position.x
+        if self.framedata.is_roll(self.human.character, self.human.action):
+            onLeft = self.ai.position.x < self.framedata.roll_end_position(self.human, self.stage)
+        facingRightDirection = onLeft == self.ai.facing
+        if onLeft:
+            x = 1
+        if self.ai.action == Action.THROW_DOWN:
+            self.controller.tilt_analog(Button.BUTTON_MAIN, .5, .5)
+            return
+        if self.human.action in [Action.NEUTRAL_TECH, Action.LYING_GROUND_UP, Action.TECH_MISS_UP,Action.TECH_MISS_DOWN]:
+            self.controller.tilt_analog(Button.BUTTON_MAIN, .5, .5)
+            return
+        if self.ai.action == Action.STANDING:
+            self.controller.tilt_analog(Button.BUTTON_MAIN, x, .5)
+            return
+
+    def defend(self):
+        blocking = [Action.SHIELD_STUN, Action.SPOTDODGE, Action.SHIELD_REFLECT, Action.SHIELD]
+        #If we blocked, stop blocking
+        if self.ai.action in blocking:
+            self.controller.release_button(Button.BUTTON_L)
+            self.controller.tilt_analog(Button.BUTTON_MAIN, .5, .5)
+            return
+        hitframe = self.framedata.in_range(self.human, self.ai, self.stage)
+        framesTillHit = hitframe - self.human.action_frame
+        #SpotDodge
+        if self.framedata.is_grab(self.human.character, self.human.action):
+            #Can they grab us tho?
+            if framesTillHit > 3:
+                self.controller.press_button(Button.BUTTON_L)
+                self.controller.tilt_analog(Button.BUTTON_MAIN, .5, 0)
+                return
+        if framesTillHit < 5:
+            self.controller.press_button(Button.BUTTON_L)
+            return
+    def getUp(self):
+        states = [Action.LYING_GROUND_UP, Action.LYING_GROUND_DOWN, Action.TECH_MISS_UP, Action.TECH_MISS_DOWN]
+        #Im lazy. just gonna make them do get up attack asap. Im aware that it might be easier to make them tech, but thats more math than I want to do at the hour that it is
+        if self.ai.action in states:
+            self.controller.press_button(Button.BUTTON_A)
+            return
+        else:
+            self.controller.release_button(Button.BUTTON_A)
+            return
+
+    def goForKill(self):
+        jumpcancel = (self.ai.action == Action.KNEE_BEND) and (self.ai.action_frame >= self.jump_cancel_frames())
+        if self.ai.action == Action.UPSMASH:
+            self.controller.tilt_analog(Button.BUTTON_MAIN, .5, .5)
+            self.controller.tilt_analog(Button.BUTTON_C, .5, .5)
+            return
+        if jumpcancel:
+            self.controller.tilt_analog(Button.BUTTON_C, .5, 1)
+            return
+        #if we are running
+        if self.ai.action == Action.DASHING:
+            self.controller.tilt_analog(Button.BUTTON_MAIN, .5, 1)
+            return
+        if self.ai.action == Action.THROW_DOWN:
+            self.controller.empty_input()
+            return
+        self.controller.tilt_analog(Button.BUTTON_C, .5, 1)
         return
+
+    def approach(self):
+        x = 0
+        onLeft = self.ai.position.x < self.human.position.x
+        facingRightDirection = onLeft == self.ai.facing
+        if onLeft:
+            x = 1
+        self.controller.tilt_analog(Button.BUTTON_MAIN, x, .5)

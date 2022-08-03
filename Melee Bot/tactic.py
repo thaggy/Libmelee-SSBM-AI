@@ -90,10 +90,24 @@ class Tactic:
         distance_away_x = abs(self.ai.position.x - self.human.position.x)
         distance_away_y = abs(self.ai.position.y - self.human.position.y)
         onLeft = self.ai.position.x < self.human.position.x
+        grab_distance = 17
+        if abs(self.ai.speed_ground_x_self) > 2:
+            grab_distance = 30
         facingRightDirection = onLeft == self.ai.facing
-        if (not self.isInHitStun()) and (distance_away_x < 15) and (self.isOnStage) and (facingRightDirection) and (distance_away_y < 1.5) and (self.shouldBeOffensive()) and self.invulnerableFromRespawn():
+        if (not self.isInHitStun()) and (distance_away_x < grab_distance) and (self.isOnStage) and (facingRightDirection) and (distance_away_y < 1.5) and (self.shouldBeOffensive()) and (not self.invulnerableFromRespawn()):
             return True
         return False
+    def canGoForKill(self):
+        isAtPercent = self.human.percent >= 110
+        killstates = [Action.LYING_GROUND_UP, Action.LYING_GROUND_DOWN, Action.TECH_MISS_UP, Action.TECH_MISS_DOWN, \
+                            Action.GROUND_ROLL_FORWARD_UP, Action.GROUND_ROLL_BACKWARD_UP, \
+                            Action.GROUND_ROLL_BACKWARD_DOWN, Action.GROUND_ROLL_FORWARD_DOWN, Action.GROUND_ROLL_SPOT_DOWN]
+        grabbableTech = [Action.GROUND_ROLL_FORWARD_UP, Action.GROUND_ROLL_BACKWARD_UP, \
+                                     Action.GROUND_ROLL_BACKWARD_DOWN, Action.GROUND_ROLL_FORWARD_DOWN, Action.GROUND_ROLL_SPOT_DOWN, \
+                                     Action.NEUTRAL_TECH, Action.BACKWARD_TECH, Action.FORWARD_TECH, Action.GROUND_GETUP]
+        return (self.human.action in killstates or (self.human.action in grabbableTech and (self.human.action_frame >= 16))) and isAtPercent
+
+
     def shouldRecover(self):
         """
         returns true if we are not in hitstun and we are off stage
@@ -103,20 +117,28 @@ class Tactic:
         """
         returns true if we are not being attacked by anything that will hit us, and both us and the AI are on stage
         """
-        return (not self.beingAttacked()) and (self.isOnStage()) and (self.isHumanOnStage()) and (not self.isInHitStun())
+        return (not self.shouldDefend()) and (self.isOnStage()) and (self.isHumanOnStage())
     def shouldDefend(self):
         """
         returns true if we should be trying to defend (we are about to be attacked and are not currently in hitstun and can act on it)
         """
         return (self.beingAttacked()) and (not self.isInHitStun())
+
     def shouldNotShieldWhenShielding(self):
         """
         returns true if Shield is on and we shouldnt be defending
         """
         return (self.ai.action == Action.SHIELD) and (not self.shouldDefend())
+
     def invulnerableFromRespawn(self):
         return (not self.framedata.is_roll(self.human.character, self.human.action)) and self.human.invulnerable
+
     def shouldTechChase(self):
-        techChaseStates = [Action.BACKWARD_TECH, Action.NEUTRAL_TECH, Action.FORWARD_TECH, Action.LYING_GROUND_TOP,Action.LYING_GROUND_UP, \
-                                     Action.LYING_GROUND_DOWN, Action.TECH_MISS_UP, Action.TECH_MISS_DOWN]
+        techChaseStates = [Action.BACKWARD_TECH, Action.NEUTRAL_TECH, Action.FORWARD_TECH, Action.LYING_GROUND_UP, \
+                                     Action.LYING_GROUND_DOWN, Action.TECH_MISS_UP, Action.TECH_MISS_DOWN, Action.GROUND_ROLL_FORWARD_UP, Action.GROUND_ROLL_BACKWARD_UP, \
+                                     Action.GROUND_ROLL_BACKWARD_DOWN, Action.GROUND_ROLL_FORWARD_DOWN, Action.GROUND_ROLL_SPOT_DOWN]
         return self.human.action in techChaseStates
+
+    def isOnGround(self):
+        states = [Action.LYING_GROUND_UP, Action.LYING_GROUND_DOWN, Action.TECH_MISS_UP, Action.TECH_MISS_DOWN]
+        return self.ai.action in states
