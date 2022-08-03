@@ -318,7 +318,6 @@ class Tech:
             if self.controller.prev.button[Button.BUTTON_Z]:
                 self.controller.empty_input()
                 return
-            print("here")
             self.controller.press_button(Button.BUTTON_Z)
             return
 

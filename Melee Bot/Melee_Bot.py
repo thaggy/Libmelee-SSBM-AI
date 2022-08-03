@@ -44,12 +44,10 @@ while True:
         if meleeManager.tactic.shouldTechChase():
             meleeManager.tech.techChase()
 
-        
-
         if meleeManager.tactic.shouldRecover():
             meleeManager.tech.recover()
         #print("HUMAN -> x - " + str(gamestate.players[human_port].position.x)+ ": y - "+ str(gamestate.players[human_port].position.y) + ": state - " + str(gamestate.players[human_port].action))
-        print("AI -> x - " + str(gamestate.players[ai_port].position.x)+ ": y - "+ str(gamestate.players[ai_port].position.y) + ": state - " + str(gamestate.players[ai_port].action))
+        #print("AI -> x - " + str(gamestate.players[ai_port].position.x)+ ": y - "+ str(gamestate.players[ai_port].position.y) + ": state - " + str(gamestate.players[ai_port].action))
     else:
        #Here we are in the main menu or menu select
        melee.MenuHelper.menu_helper_simple(gamestate,meleeManager.ai_controller,melee.enums.Character.FOX,melee.enums.Stage.FINAL_DESTINATION,"",0,0,False,False)
