@@ -29,8 +29,8 @@ The goal of this project is NOT actually to create the ultimate AI to take over 
 ## Known Issues
 Transition from isHumanDead to shouldBeOffensive is not that smooth
 
-It is actually to break out of a techchase but not teching, need to update that logic
+It is actually possible to break out of a techchase but not teching, need to update that logic
 
 The bot does not handle being hit very well at all (or really at all)
 
-The bots recovery is wonky and basically always jumps and the illusions
+The bots recovery is wonky. Jumping is a little weird
