@@ -117,7 +117,7 @@ class Tactic:
         """
         returns true if we are not being attacked by anything that will hit us, and both us and the AI are on stage
         """
-        return (not self.shouldDefend()) and (not self.shouldRecover()) and (self.isHumanOnStage())
+        return (not self.shouldDefend()) and (not self.shouldRecover()) and (self.isHumanOnStage()) and (not self.isHumanDead()) 
     def shouldDefend(self):
         """
         returns true if we should be trying to defend (we are about to be attacked and are not currently in hitstun and can act on it)

@@ -20,6 +20,9 @@ while True:
     if gamestate.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
         meleeManager.initAI(gamestate.players[ai_port], gamestate.players[human_port], meleeManager.ai_controller, gamestate.stage)
 
+        if meleeManager.tactic.isHumanDead():
+            meleeManager.tech.multishine()
+
         if meleeManager.tactic.shouldBeOffensive():
             meleeManager.tech.approach()
 
