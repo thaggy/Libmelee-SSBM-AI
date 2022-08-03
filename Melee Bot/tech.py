@@ -276,16 +276,38 @@ class Tech:
 
         self.controller.empty_input()
 
+
+    def releaseLandZ(self):
+        """
+        releases L and Z buttons
+        """
+        self.controller.release_button(Button.BUTTON_Z)
+        self.controller.release_button(Button.BUTTON_L)
+        return
     def grab(self):
+        """
+        performs grab
+        """
+        #If one of the following happen, we shouldnt be trying to grab
         if self.controller.prev.button[Button.BUTTON_Z]:
             self.controller.empty_input()
             return
         if self.ai.action == Action.GRAB:
             self.controller.empty_input()
             return
+        if self.human.action in [Action.LYING_GROUND_UP, Action.LYING_GROUND_DOWN, Action.TECH_MISS_UP, Action.TECH_MISS_DOWN]:
+            self.controller.empty_input()
+            return
         if self.ai.action == Action.LANDING_SPECIAL:
             self.controller.empty_input()
             return
+        if (self.human.action in [Action.NEUTRAL_TECH, Action.BACKWARD_TECH, Action.FORWARD_TECH, Action.GROUND_GETUP]) and (self.human.action_frame >= 36):
+            if self.controller.prev.button[Button.BUTTON_Z]:
+                self.controller.empty_input()
+                return
+            self.controller.press_button(Button.BUTTON_Z)
+            return
+        #If we are shining, we should jump cancel grab
         if self.ai.action in [Action.DOWN_B_GROUND_START, Action.DOWN_B_GROUND] and self.ai.action_frame >=1:
             self.controller.press_button(Button.BUTTON_Y)
             self.controller.press_button(Button.BUTTON_Z)
@@ -303,7 +325,9 @@ class Tech:
             return
         if self.controller.prev.button[Button.BUTTON_Z]:
             self.controller.release_button(Button.BUTTON_Z)
-            return
-        if not self.ai.action in [Action.LYING_GROUND_UP, Action.TECH_MISS_UP, Action.TECH_MISS_DOWN]:
+        #Perform the grab
+        if not (self.ai.action in [Action.LYING_GROUND_UP, Action.LYING_GROUND_DOWN, Action.TECH_MISS_UP, Action.TECH_MISS_DOWN]):
             self.controller.press_button(Button.BUTTON_Z)
-        
+
+    def techChase(self):
+        return
