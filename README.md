@@ -23,9 +23,6 @@ This drives what to do, or what 'tactic' to pick from. It is used to detect what
 ### tech.py
 This basically presses the buttons. Any tech that needs to be performed such as WaveDashing or Multishining is stored here. it sees what animation we are in and when to act next.
 
-## Project Goal
-The goal of this project is NOT actually to create the ultimate AI to take over the melee scene. That would, if anything, be a side effect of this project. The main goal of this project is to create tools for other developers to use in their respective smashbots. I am creating basic tools, such as a method that can make any character wavedash, for other developers to use and even modify when they create their renditions of the smashbot. My Smash Bot is just an example of what can be done, not nessecarily the best final product.
-
 ## Known Issues
 Transition from isHumanDead to shouldBeOffensive is not that smooth
 
